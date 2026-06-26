@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Industrial Monitoring Agents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <main class="mx-auto grid min-h-screen max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <section class="flex flex-col justify-center">
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">LangGraph-ready multi-agents</p>
+        <h1 class="mt-4 text-4xl font-bold tracking-tight md:text-5xl">Surveillance industrielle intelligente</h1>
+        <p class="mt-5 text-slate-300">
+          Analyse de télémétrie machine, routage normal ou critique, diagnostic synthétique et traçabilité complète par Correlation ID.
+        </p>
+        <div class="mt-8 grid gap-3 sm:grid-cols-3">
+          <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+            <p class="text-2xl font-bold text-cyan-300">API</p>
+            <p class="text-sm text-slate-400">FastAPI</p>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+            <p class="text-2xl font-bold text-emerald-300">CID</p>
+            <p class="text-sm text-slate-400">Traçabilité</p>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+            <p class="text-2xl font-bold text-amber-300">CI</p>
+            <p class="text-sm text-slate-400">Tests auto</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-lg border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-cyan-950/30">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Tester une télémétrie</h2>
+          <span id="badge" class="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">En attente</span>
+        </div>
+        <textarea id="payload" class="h-72 w-full rounded-lg border border-slate-700 bg-slate-950 p-4 font-mono text-sm text-slate-100 outline-none focus:border-cyan-400">{
+  "machine_id": "ROBOT-SOUDURE-01",
+  "temperature_c": 92,
+  "vibration_mm_s": 8.4,
+  "pressure_bar": 10.5,
+  "energy_kw": 39,
+  "rotation_rpm": 1800,
+  "error_code": "E_TEMP"
+}</textarea>
+        <button id="send" class="mt-4 w-full rounded-lg bg-cyan-400 px-4 py-3 font-semibold text-slate-950 hover:bg-cyan-300">
+          Analyser
+        </button>
+        <pre id="result" class="mt-4 max-h-80 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm text-slate-200"></pre>
+      </section>
+    </main>
+
+    <script>
+      const payload = document.querySelector("#payload");
+      const result = document.querySelector("#result");
+      const badge = document.querySelector("#badge");
+      document.querySelector("#send").addEventListener("click", async () => {
+        badge.textContent = "Analyse...";
+        badge.className = "rounded-full bg-cyan-900 px-3 py-1 text-sm text-cyan-100";
+        try {
+          const response = await fetch("/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payload.value
+          });
+          const data = await response.json();
+          result.textContent = JSON.stringify(data, null, 2);
+          const critical = data.result?.status === "critical";
+          badge.textContent = critical ? "Critique" : "Normal";
+          badge.className = critical
+            ? "rounded-full bg-red-900 px-3 py-1 text-sm text-red-100"
+            : "rounded-full bg-emerald-900 px-3 py-1 text-sm text-emerald-100";
+        } catch (error) {
+          badge.textContent = "Erreur";
+          badge.className = "rounded-full bg-red-900 px-3 py-1 text-sm text-red-100";
+          result.textContent = String(error);
+        }
+      });
+    </script>
+  </body>
+</html>
