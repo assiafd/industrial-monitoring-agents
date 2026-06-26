@@ -25,9 +25,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
-<<<<<<< HEAD
         env:
           PYTHONPATH: .
-=======
->>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
         run: pytest -q
