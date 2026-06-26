@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 import json
 from typing import Any
 
 from src.prompts import ROUTER_PROMPT
 
+=======
+from typing import Any
+
+>>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
 
 @dataclass(frozen=True)
 class Thresholds:
@@ -20,11 +25,16 @@ class Thresholds:
 
 
 class RouterAgent:
+<<<<<<< HEAD
     """Prompt-driven agent that chooses the normal or critical route."""
+=======
+    """Evaluates machine telemetry and chooses a workflow route."""
+>>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
 
     def __init__(self, thresholds: Thresholds | None = None) -> None:
         self.thresholds = thresholds or Thresholds()
 
+<<<<<<< HEAD
     def build_prompt(self, telemetry: dict[str, Any]) -> str:
         return ROUTER_PROMPT.format(
             max_temperature_c=self.thresholds.max_temperature_c,
@@ -36,6 +46,8 @@ class RouterAgent:
             telemetry=json.dumps(telemetry, ensure_ascii=False, indent=2),
         )
 
+=======
+>>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
     def evaluate(self, telemetry: dict[str, Any]) -> dict[str, Any]:
         issues: list[str] = []
 
@@ -67,10 +79,13 @@ class RouterAgent:
             "severity": severity,
             "issues": issues,
             "machine_id": telemetry.get("machine_id", "unknown"),
+<<<<<<< HEAD
             "prompt": self.build_prompt(telemetry),
             "reasoning": (
                 "Route critique sélectionnée car au moins une anomalie dépasse les seuils."
                 if issues
                 else "Route normale sélectionnée car toutes les mesures sont dans les seuils."
             ),
+=======
+>>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
         }
