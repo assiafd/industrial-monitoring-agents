@@ -1,5 +1,11 @@
 # Projet : Système Intelligent de Surveillance et de Maintenance Industrielle
 
+## Version
+
+Version actuelle : `1.1.0`
+
+Cette version ajoute l’envoi automatique d’un rapport d’incident vers Slack lorsqu’une machine passe au statut critique.
+
 ## 1. Présentation
 
 Ce projet met en œuvre une architecture multi-agents pour la surveillance intelligente d’une machine industrielle dans le secteur automobile.
@@ -84,6 +90,7 @@ Dashboard dynamique
 | GitHub Actions | Intégration continue |
 | Docker | Conteneurisation |
 | Render | Déploiement cloud |
+| Slack API | Notification des incidents critiques |
 
 ## 5. Structure du projet
 
@@ -527,7 +534,55 @@ Il explique comment :
 - analyser un diagnostic critique ;
 - vérifier les tests.
 
-## 19. Gouvernance des agents
+## 19. Notification Slack des incidents critiques
+
+Quand une machine passe au statut `critical`, l’`EmergencyAgent` prépare un rapport d’incident et tente de l’envoyer vers Slack.
+
+Le message Slack contient :
+
+- machine concernée ;
+- Correlation ID ;
+- diagnostic ;
+- principales mesures de télémétrie ;
+- actions recommandées.
+
+### 19.1 Variables d’environnement
+
+Créer un fichier `.env` local ou configurer les variables dans Render :
+
+```env
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_CHANNEL_NAME=nouveau-canal
+```
+
+Ne jamais pousser le fichier `.env` sur GitHub.
+
+### 19.2 Scopes Slack nécessaires
+
+Le bot Slack doit avoir au minimum :
+
+```text
+chat:write
+channels:read
+groups:read
+```
+
+Le bot doit aussi être ajouté au canal Slack cible.
+
+### 19.3 Comportement sans token
+
+Si `SLACK_BOT_TOKEN` n’est pas configuré, l’envoi Slack est ignoré proprement :
+
+```json
+{
+  "status": "skipped",
+  "reason": "SLACK_BOT_TOKEN is not configured"
+}
+```
+
+Cela permet aux tests automatisés et à GitHub Actions de fonctionner sans secret.
+
+## 20. Gouvernance des agents
 
 La gouvernance est documentée dans :
 
@@ -545,21 +600,21 @@ Ce fichier décrit :
 - les règles de traçabilité ;
 - les limites du système.
 
-## 20. Scénario de démonstration
+## 21. Scénario de démonstration
 
-### 20.1 Lancer l’application
+### 21.1 Lancer l’application
 
 ```bash
 uvicorn src.main:app --reload
 ```
 
-### 20.2 Ouvrir le dashboard
+### 21.2 Ouvrir le dashboard
 
 ```text
 http://localhost:8000
 ```
 
-### 20.3 Lancer le simulateur normal
+### 21.3 Lancer le simulateur normal
 
 ```bash
 python scripts/simulate_factory.py --loop
@@ -567,7 +622,7 @@ python scripts/simulate_factory.py --loop
 
 Le dashboard affiche un état normal.
 
-### 20.4 Lancer le simulateur critique
+### 21.4 Lancer le simulateur critique
 
 ```bash
 python scripts/simulate_factory.py --critical --loop
@@ -581,7 +636,9 @@ Le dashboard affiche :
 - actions recommandées ;
 - bouton d’acquittement d’alerte.
 
-### 20.5 Exporter un rapport
+Si Slack est configuré, un rapport d’incident est envoyé automatiquement dans le canal défini par `SLACK_CHANNEL_NAME`.
+
+### 21.5 Exporter un rapport
 
 Cliquer sur :
 
@@ -591,7 +648,7 @@ Exporter rapport
 
 Le rapport généré contient les informations nécessaires au suivi de l’incident.
 
-## 21. Critères de validation couverts
+## 22. Critères de validation couverts
 
 | Critère | Statut |
 | --- | --- |
@@ -608,8 +665,9 @@ Le rapport généré contient les informations nécessaires au suivi de l’inci
 | Agent Card | Couvert |
 | Dashboard dynamique | Couvert |
 | Documentation technique | Couvert |
+| Notification Slack en cas critique | Couvert |
 
-## 22. Conclusion
+## 23. Conclusion
 
 Ce projet fournit une solution complète de surveillance industrielle intelligente. Il combine une architecture multi-agents, un workflow LangGraph, un agent de monitoring, une API FastAPI, un dashboard dynamique, des tests automatisés, Docker et un déploiement cloud.
 

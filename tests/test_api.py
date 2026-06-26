@@ -53,3 +53,4 @@ def test_analyze_endpoint_routes_critical_incident():
     assert body["workflow_status"] == "incident_traced"
     assert body["result"]["status"] == "critical"
     assert "Tu es EmergencyAgent" in body["result"]["agent_prompt"]
+    assert body["result"]["slack_notification"]["status"] == "skipped"

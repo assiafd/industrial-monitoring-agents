@@ -50,7 +50,11 @@ def handle_critical_state(state: WorkflowState) -> WorkflowState:
     telemetry = state["telemetry"]
     monitoring = state["monitoring"]
     decision = state["decision"]
-    result = emergency_agent.handle(telemetry, decision)
+    result = emergency_agent.handle(
+        telemetry,
+        decision,
+        correlation_id=monitoring.correlation_id,
+    )
     monitoring.record("emergency_agent", "success", {"status": result["status"]})
     return {**state, "result": result, "final_status": "incident_traced"}
 
