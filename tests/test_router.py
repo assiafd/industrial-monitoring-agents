@@ -17,10 +17,7 @@ def test_router_returns_normal_route_for_safe_telemetry():
     assert decision["route"] == "normal"
     assert decision["severity"] == "low"
     assert decision["issues"] == []
-<<<<<<< HEAD
     assert "Tu es RouterAgent" in decision["prompt"]
-=======
->>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
 
 
 def test_router_returns_critical_route_for_dangerous_telemetry():

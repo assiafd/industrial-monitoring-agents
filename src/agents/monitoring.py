@@ -8,10 +8,7 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
-<<<<<<< HEAD
 from src.prompts import MONITORING_PROMPT
-=======
->>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
 from src.utils.logger import configure_logger
 
 
@@ -26,10 +23,7 @@ class MonitoringAgent:
     def __post_init__(self) -> None:
         self._logger = configure_logger()
         self._start_timer = perf_counter()
-<<<<<<< HEAD
         self.record("monitoring_agent_initialized", "success", {"prompt": MONITORING_PROMPT})
-=======
->>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
 
     def record(self, step: str, status: str, details: dict[str, Any] | None = None) -> None:
         """Append an observable workflow event and write a structured log."""
