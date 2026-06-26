@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import random
+import time
 from typing import Any
 
 import requests
@@ -34,14 +35,28 @@ def generate_payload(critical: bool = False) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", default="http://localhost:8000/analyze")
+    parser.add_argument("--url", default="http://localhost:8000/telemetry")
     parser.add_argument("--critical", action="store_true")
+    parser.add_argument("--loop", action="store_true")
+    parser.add_argument("--interval", type=float, default=2.0)
     args = parser.parse_args()
 
-    payload = generate_payload(critical=args.critical)
-    response = requests.post(args.url, json=payload, timeout=10)
-    response.raise_for_status()
-    print(response.json())
+    while True:
+        payload = generate_payload(critical=args.critical)
+        response = requests.post(args.url, json=payload, timeout=10)
+        response.raise_for_status()
+        body = response.json()
+        status = body["analysis"]["result"]["status"]
+        correlation_id = body["analysis"]["correlation_id"]
+        print(
+            f"{payload['machine_id']} -> {status} "
+            f"temp={payload['temperature_c']:.1f}C "
+            f"vib={payload['vibration_mm_s']:.1f}mm/s "
+            f"cid={correlation_id}"
+        )
+        if not args.loop:
+            break
+        time.sleep(args.interval)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,22 @@ class TelemetryPayload(BaseModel):
     error_code: str | None = Field(default="OK")
 
 
+telemetry_history: list[dict[str, Any]] = []
+
+
+def store_telemetry(payload: TelemetryPayload) -> dict[str, Any]:
+    telemetry = payload.model_dump()
+    analysis = run_workflow(telemetry)
+    item = {
+        "received_at": datetime.now(UTC).isoformat(),
+        "telemetry": telemetry,
+        "analysis": analysis,
+    }
+    telemetry_history.append(item)
+    del telemetry_history[:-50]
+    return item
+
+
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request})
@@ -45,3 +62,22 @@ def health() -> dict[str, str]:
 @app.post("/analyze")
 def analyze(payload: TelemetryPayload) -> dict[str, Any]:
     return run_workflow(payload.model_dump())
+
+
+@app.post("/telemetry")
+def receive_machine_telemetry(payload: TelemetryPayload) -> dict[str, Any]:
+    """Receive telemetry from a real machine, simulator, PLC bridge, or IoT gateway."""
+
+    return store_telemetry(payload)
+
+
+@app.get("/telemetry/latest")
+def latest_machine_telemetry() -> dict[str, Any]:
+    if not telemetry_history:
+        return {"available": False, "message": "Aucune télémétrie reçue pour le moment."}
+    return {"available": True, **telemetry_history[-1]}
+
+
+@app.get("/telemetry/history")
+def machine_telemetry_history() -> dict[str, Any]:
+    return {"items": telemetry_history}
