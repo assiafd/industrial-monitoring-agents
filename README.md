@@ -338,10 +338,10 @@ src/templates/index.html
 Variable :
 
 ```js
-const refreshIntervalMs = 2500;
+const refreshIntervalMs = 5000;
 ```
 
-`2500` correspond à 2,5 secondes.
+`5000` correspond à 5 secondes.
 
 ### 10.3 Acquittement d’alerte
 
@@ -516,6 +516,12 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
 Une fois déployé, l’application est accessible via l’URL Render.
+
+URL de déploiement :
+
+```text
+https://industrial-monitoring-agents.onrender.com/
+```
 
 ## 18. Runbook incident
 
