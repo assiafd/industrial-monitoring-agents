@@ -5,78 +5,293 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Industrial Monitoring Agents</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
-  <body class="min-h-screen bg-slate-950 text-slate-100">
-    <main class="mx-auto grid min-h-screen max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[0.9fr_1.1fr]">
-      <section class="flex flex-col justify-center">
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">LangGraph-ready multi-agents</p>
-        <h1 class="mt-4 text-4xl font-bold tracking-tight md:text-5xl">Surveillance industrielle intelligente</h1>
-        <p class="mt-5 text-slate-300">
-          Analyse de télémétrie machine, routage normal ou critique, diagnostic synthétique et traçabilité complète par Correlation ID.
-        </p>
-        <div class="mt-8 grid gap-3 sm:grid-cols-3">
-          <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
-            <p class="text-2xl font-bold text-cyan-300">API</p>
-            <p class="text-sm text-slate-400">FastAPI</p>
-          </div>
-          <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
-            <p class="text-2xl font-bold text-emerald-300">CID</p>
-            <p class="text-sm text-slate-400">Traçabilité</p>
-          </div>
-          <div class="rounded-lg border border-slate-800 bg-slate-900 p-4">
-            <p class="text-2xl font-bold text-amber-300">CI</p>
-            <p class="text-sm text-slate-400">Tests auto</p>
-          </div>
+  <body class="min-h-screen bg-slate-100 text-slate-950">
+    <main class="mx-auto max-w-7xl px-5 py-6">
+      <header class="mb-6 flex flex-col gap-4 rounded-lg bg-slate-950 p-6 text-white shadow-lg md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Automobile · LangGraph · Multi-agents</p>
+          <h1 class="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Dashboard de surveillance industrielle</h1>
+          <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+            Analyse temps réel de télémétrie machine, routage normal ou critique, diagnostic agentique et observabilité par Correlation ID.
+          </p>
         </div>
+        <div class="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3">
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Correlation ID</p>
+          <p id="correlationId" class="mt-1 max-w-xs truncate font-mono text-sm text-cyan-200">En attente</p>
+        </div>
+      </header>
+
+      <section class="mb-6 grid gap-4 md:grid-cols-4">
+        <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-sm text-slate-500">État machine</p>
+          <p id="statusLabel" class="mt-2 text-2xl font-bold text-slate-800">En attente</p>
+        </article>
+        <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-sm text-slate-500">Sévérité</p>
+          <p id="severityLabel" class="mt-2 text-2xl font-bold text-slate-800">-</p>
+        </article>
+        <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-sm text-slate-500">Durée workflow</p>
+          <p id="durationLabel" class="mt-2 text-2xl font-bold text-slate-800">- ms</p>
+        </article>
+        <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-sm text-slate-500">Machine</p>
+          <p id="machineLabel" class="mt-2 text-2xl font-bold text-slate-800">-</p>
+        </article>
       </section>
 
-      <section class="rounded-lg border border-slate-800 bg-slate-900 p-5 shadow-2xl shadow-cyan-950/30">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-xl font-semibold">Tester une télémétrie</h2>
-          <span id="badge" class="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">En attente</span>
-        </div>
-        <textarea id="payload" class="h-72 w-full rounded-lg border border-slate-700 bg-slate-950 p-4 font-mono text-sm text-slate-100 outline-none focus:border-cyan-400">{
-  "machine_id": "ROBOT-SOUDURE-01",
-  "temperature_c": 92,
-  "vibration_mm_s": 8.4,
-  "pressure_bar": 10.5,
-  "energy_kw": 39,
-  "rotation_rpm": 1800,
-  "error_code": "E_TEMP"
-}</textarea>
-        <button id="send" class="mt-4 w-full rounded-lg bg-cyan-400 px-4 py-3 font-semibold text-slate-950 hover:bg-cyan-300">
-          Analyser
-        </button>
-        <pre id="result" class="mt-4 max-h-80 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm text-slate-200"></pre>
+      <section class="mb-6 grid gap-4 lg:grid-cols-[0.75fr_1.25fr]">
+        <aside class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="mb-5 flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-semibold">Scénario de télémétrie</h2>
+              <p class="mt-1 text-sm text-slate-500">Choisis une situation puis lance l'analyse.</p>
+            </div>
+            <span id="routeBadge" class="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">Prêt</span>
+          </div>
+
+          <div class="grid gap-3">
+            <button data-scenario="normal" class="scenario rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-left hover:bg-emerald-100">
+              <span class="block font-semibold text-emerald-900">Production normale</span>
+              <span class="text-sm text-emerald-700">Toutes les mesures restent dans les seuils.</span>
+            </button>
+            <button data-scenario="critical" class="scenario rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-left hover:bg-red-100">
+              <span class="block font-semibold text-red-900">Incident critique</span>
+              <span class="text-sm text-red-700">Température, vibration et pression dépassent les seuils.</span>
+            </button>
+          </div>
+
+          <button id="analyzeButton" class="mt-5 w-full rounded-lg bg-slate-950 px-4 py-3 font-semibold text-white hover:bg-slate-800">
+            Analyser la machine
+          </button>
+
+          <div class="mt-5 rounded-lg bg-slate-50 p-4">
+            <p class="text-sm font-semibold text-slate-700">Diagnostic agentique</p>
+            <p id="diagnosticText" class="mt-2 text-sm leading-6 text-slate-600">Aucune analyse lancée.</p>
+          </div>
+        </aside>
+
+        <section class="grid gap-4 md:grid-cols-2">
+          <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="font-semibold">Mesures instantanées</h2>
+              <span class="text-sm text-slate-500">Capteurs</span>
+            </div>
+            <div class="h-72">
+              <canvas id="telemetryChart"></canvas>
+            </div>
+          </article>
+
+          <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="font-semibold">Score de risque</h2>
+              <span class="text-sm text-slate-500">Routeur</span>
+            </div>
+            <div class="h-72">
+              <canvas id="riskChart"></canvas>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section class="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 class="font-semibold">Timeline du workflow LangGraph</h2>
+          <ol id="timeline" class="mt-4 space-y-3 text-sm text-slate-600">
+            <li class="rounded-lg bg-slate-50 p-3">Aucune exécution pour le moment.</li>
+          </ol>
+        </article>
+
+        <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 class="font-semibold">Actions recommandées</h2>
+          <ul id="actionsList" class="mt-4 space-y-3 text-sm text-slate-600">
+            <li class="rounded-lg bg-slate-50 p-3">Les recommandations apparaîtront après analyse.</li>
+          </ul>
+        </article>
       </section>
     </main>
 
     <script>
-      const payload = document.querySelector("#payload");
-      const result = document.querySelector("#result");
-      const badge = document.querySelector("#badge");
-      document.querySelector("#send").addEventListener("click", async () => {
-        badge.textContent = "Analyse...";
-        badge.className = "rounded-full bg-cyan-900 px-3 py-1 text-sm text-cyan-100";
-        try {
-          const response = await fetch("/analyze", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: payload.value
-          });
-          const data = await response.json();
-          result.textContent = JSON.stringify(data, null, 2);
-          const critical = data.result?.status === "critical";
-          badge.textContent = critical ? "Critique" : "Normal";
-          badge.className = critical
-            ? "rounded-full bg-red-900 px-3 py-1 text-sm text-red-100"
-            : "rounded-full bg-emerald-900 px-3 py-1 text-sm text-emerald-100";
-        } catch (error) {
-          badge.textContent = "Erreur";
-          badge.className = "rounded-full bg-red-900 px-3 py-1 text-sm text-red-100";
-          result.textContent = String(error);
+      const scenarios = {
+        normal: {
+          machine_id: "CONVOYEUR-01",
+          temperature_c: 64,
+          vibration_mm_s: 2.8,
+          pressure_bar: 8.4,
+          energy_kw: 24,
+          rotation_rpm: 1650,
+          error_code: "OK"
+        },
+        critical: {
+          machine_id: "ROBOT-SOUDURE-01",
+          temperature_c: 96,
+          vibration_mm_s: 9.1,
+          pressure_bar: 13,
+          energy_kw: 48,
+          rotation_rpm: 3800,
+          error_code: "E_TEMP"
+        }
+      };
+
+      let selectedScenario = "critical";
+
+      const telemetryChart = new Chart(document.querySelector("#telemetryChart"), {
+        type: "bar",
+        data: {
+          labels: ["Température", "Vibrations", "Pression", "Énergie", "Rotation"],
+          datasets: [
+            {
+              label: "Mesure normalisée",
+              data: [0, 0, 0, 0, 0],
+              backgroundColor: ["#38bdf8", "#818cf8", "#f59e0b", "#22c55e", "#a855f7"],
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, max: 140 } },
+          plugins: { legend: { display: false } }
         }
       });
+
+      const riskChart = new Chart(document.querySelector("#riskChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Risque", "Marge"],
+          datasets: [
+            {
+              data: [0, 100],
+              backgroundColor: ["#e11d48", "#e2e8f0"],
+              borderWidth: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "70%",
+          plugins: { legend: { position: "bottom" } }
+        }
+      });
+
+      function normalizeTelemetry(payload) {
+        return [
+          Math.round((payload.temperature_c / 85) * 100),
+          Math.round((payload.vibration_mm_s / 7.5) * 100),
+          Math.round((payload.pressure_bar / 12) * 100),
+          Math.round((payload.energy_kw / 45) * 100),
+          Math.round((payload.rotation_rpm / 3500) * 100)
+        ];
+      }
+
+      function riskScore(payload) {
+        return Math.min(100, Math.max(...normalizeTelemetry(payload)));
+      }
+
+      function updateScenarioButtons() {
+        document.querySelectorAll(".scenario").forEach((button) => {
+          const active = button.dataset.scenario === selectedScenario;
+          button.classList.toggle("ring-2", active);
+          button.classList.toggle("ring-slate-950", active);
+        });
+      }
+
+      function setBadge(status) {
+        const badge = document.querySelector("#routeBadge");
+        if (status === "critical") {
+          badge.textContent = "Critique";
+          badge.className = "rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700";
+          return;
+        }
+        if (status === "normal") {
+          badge.textContent = "Normal";
+          badge.className = "rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700";
+          return;
+        }
+        badge.textContent = status;
+        badge.className = "rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600";
+      }
+
+      function renderTimeline(events) {
+        const timeline = document.querySelector("#timeline");
+        timeline.innerHTML = "";
+        events.forEach((event) => {
+          const item = document.createElement("li");
+          item.className = "rounded-lg border border-slate-200 bg-slate-50 p-3";
+          item.innerHTML = `
+            <div class="flex items-center justify-between gap-3">
+              <span class="font-semibold text-slate-800">${event.step}</span>
+              <span class="rounded-full bg-white px-2 py-1 text-xs text-slate-500">${event.status}</span>
+            </div>
+            <p class="mt-1 font-mono text-xs text-slate-400">${new Date(event.timestamp).toLocaleString()}</p>
+          `;
+          timeline.appendChild(item);
+        });
+      }
+
+      function renderActions(actions) {
+        const list = document.querySelector("#actionsList");
+        list.innerHTML = "";
+        actions.forEach((action) => {
+          const item = document.createElement("li");
+          item.className = "rounded-lg border border-slate-200 bg-slate-50 p-3";
+          item.textContent = action;
+          list.appendChild(item);
+        });
+      }
+
+      async function analyze() {
+        const payload = scenarios[selectedScenario];
+        setBadge("Analyse...");
+
+        telemetryChart.data.datasets[0].data = normalizeTelemetry(payload);
+        telemetryChart.update();
+
+        riskChart.data.datasets[0].data = [riskScore(payload), 100 - riskScore(payload)];
+        riskChart.update();
+
+        const response = await fetch("/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        const status = data.result.status;
+
+        setBadge(status);
+        document.querySelector("#correlationId").textContent = data.correlation_id;
+        document.querySelector("#statusLabel").textContent = status === "critical" ? "Critique" : "Normal";
+        document.querySelector("#statusLabel").className = status === "critical"
+          ? "mt-2 text-2xl font-bold text-red-600"
+          : "mt-2 text-2xl font-bold text-emerald-600";
+        document.querySelector("#severityLabel").textContent = data.events.find((event) => event.step === "route_decision")?.details?.severity || "-";
+        document.querySelector("#durationLabel").textContent = `${data.duration_ms} ms`;
+        document.querySelector("#machineLabel").textContent = data.result.machine_id;
+        document.querySelector("#diagnosticText").textContent = data.result.diagnostic;
+
+        renderTimeline(data.events);
+        renderActions(data.result.actions);
+      }
+
+      document.querySelectorAll(".scenario").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectedScenario = button.dataset.scenario;
+          updateScenarioButtons();
+          const payload = scenarios[selectedScenario];
+          telemetryChart.data.datasets[0].data = normalizeTelemetry(payload);
+          telemetryChart.update();
+          riskChart.data.datasets[0].data = [riskScore(payload), 100 - riskScore(payload)];
+          riskChart.update();
+        });
+      });
+
+      document.querySelector("#analyzeButton").addEventListener("click", analyze);
+      updateScenarioButtons();
+      analyze();
     </script>
   </body>
 </html>
