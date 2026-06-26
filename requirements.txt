@@ -4,9 +4,5 @@ uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pytest==8.3.4
 requests==2.32.3
-<<<<<<< HEAD
 httpx==0.27.2
 jinja2==3.1.5
-=======
-httpx==0.28.1
->>>>>>> c9a031ce3b2c32c38ee1644d82d67990a620e630
