@@ -1,0 +1,17 @@
+temperature_c,vibration_mm_s,pressure_bar,energy_kw,rotation_rpm,error_code,label
+62,2.1,8.0,21,1500,OK,normal
+68,2.8,8.5,24,1800,OK,normal
+71,3.2,9.0,26,2100,OK,normal
+59,1.9,7.8,19,1400,OK,normal
+76,4.0,9.8,31,2400,OK,normal
+82,5.1,10.4,36,2600,OK,normal
+64,2.5,8.2,23,1700,NONE,normal
+73,3.7,9.4,28,1900,OK,normal
+95,9.2,13.0,30,1800,OK,critical
+96,8.7,13.2,42,4100,E_HYDRAULIC_OVERPRESSURE,critical
+91,7.9,11.5,47,3600,E_ENERGY,critical
+88,8.3,12.8,35,1750,E_PRESSURE,critical
+99,6.4,10.2,33,2200,E_TEMP,critical
+70,2.2,8.4,25,4300,E_ROTATION,critical
+60,2.0,7.9,20,350,E_ROTATION_LOW,critical
+86,7.8,12.3,46,3550,E_MULTI,critical

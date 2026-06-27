@@ -18,6 +18,7 @@ def test_router_returns_normal_route_for_safe_telemetry():
     assert decision["severity"] == "low"
     assert decision["issues"] == []
     assert "Tu es RouterAgent" in decision["prompt"]
+    assert "ml_prediction" in decision
 
 
 def test_router_returns_critical_route_for_dangerous_telemetry():
@@ -37,3 +38,4 @@ def test_router_returns_critical_route_for_dangerous_telemetry():
     assert decision["severity"] == "high"
     assert "Température excessive" in decision["issues"]
     assert "Vibrations anormales" in decision["issues"]
+    assert "ml_prediction" in decision

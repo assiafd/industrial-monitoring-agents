@@ -604,7 +604,80 @@ GEMINI_MODEL=gemini-2.5-flash
 
 Les réponses des agents contiennent un bloc `llm` indiquant le provider, le modèle, l’état d’activation et la réponse générée par Gemini.
 
-## 21. Gouvernance des agents
+## 21. Module d’entraînement scikit-learn
+
+Le projet contient un module d’entraînement permettant d’ajouter une prédiction ML à `RouterAgent`. Le modèle prédit `normal` ou `critical` à partir des télémétries historiques. Les règles de sécurité restent prioritaires : si un seuil critique est dépassé, le workflow garde la route `critical`.
+
+### 21.1 Ajouter les dépendances
+
+Les dépendances sont dans `requirements.txt` :
+
+```text
+scikit-learn
+joblib
+pandas
+```
+
+### 21.2 Créer le dataset
+
+Le dataset d’exemple est disponible ici :
+
+```text
+data/telemetry_training.csv
+```
+
+### 21.3 Créer le script d’entraînement
+
+Le script est disponible ici :
+
+```text
+scripts/train_model.py
+```
+
+### 21.4 Entraîner le modèle
+
+```bash
+python scripts/train_model.py
+```
+
+### 21.5 Sauvegarder le modèle
+
+Le script sauvegarde automatiquement le modèle ici :
+
+```text
+models/machine_health_model.joblib
+```
+
+### 21.6 Charger le modèle dans RouterAgent
+
+Le chargement est géré par :
+
+```text
+src/utils/ml_model.py
+```
+
+`RouterAgent` ajoute maintenant une clé `ml_prediction` dans sa décision.
+
+### 21.7 Exemple de réponse
+
+```json
+"ml_prediction": {
+  "status": "predicted",
+  "label": "critical",
+  "confidence": 0.94
+}
+```
+
+### 21.8 Afficher la prédiction dans le dashboard
+
+Le dashboard affiche une carte **Prédiction ML** avec :
+
+- label prédit ;
+- confiance ;
+- accuracy de test ;
+- statut du modèle.
+
+## 22. Gouvernance des agents
 
 La gouvernance est documentée dans :
 
@@ -622,21 +695,21 @@ Ce fichier décrit :
 - les règles de traçabilité ;
 - les limites du système.
 
-## 22. Scénario de démonstration
+## 23. Scénario de démonstration
 
-### 22.1 Lancer l’application
+### 23.1 Lancer l’application
 
 ```bash
 uvicorn src.main:app --reload
 ```
 
-### 22.2 Ouvrir le dashboard
+### 23.2 Ouvrir le dashboard
 
 ```text
 http://localhost:8000
 ```
 
-### 22.3 Lancer le simulateur normal
+### 23.3 Lancer le simulateur normal
 
 ```bash
 python scripts/simulate_factory.py --loop
@@ -644,7 +717,7 @@ python scripts/simulate_factory.py --loop
 
 Le dashboard affiche un état normal.
 
-### 22.4 Lancer le simulateur critique
+### 23.4 Lancer le simulateur critique
 
 ```bash
 python scripts/simulate_factory.py --critical --loop
@@ -660,7 +733,7 @@ Le dashboard affiche :
 
 Si Slack est configuré, un rapport d’incident est envoyé automatiquement dans le canal défini par `SLACK_CHANNEL_NAME`.
 
-### 22.5 Exporter un rapport
+### 23.5 Exporter un rapport
 
 Cliquer sur :
 
@@ -670,7 +743,7 @@ Exporter rapport
 
 Le rapport généré contient les informations nécessaires au suivi de l’incident.
 
-## 23. Critères de validation couverts
+## 24. Critères de validation couverts
 
 | Critère | Statut |
 | --- | --- |
@@ -689,8 +762,9 @@ Le rapport généré contient les informations nécessaires au suivi de l’inci
 | Documentation technique | Couvert |
 | Notification Slack en cas critique | Couvert |
 | LLM Gemini 2.5 Flash dans les agents | Couvert |
+| Module d’entraînement scikit-learn | Couvert |
 
-## 24. Conclusion
+## 25. Conclusion
 
 Ce projet fournit une solution complète de surveillance industrielle intelligente. Il combine une architecture multi-agents, un workflow LangGraph, un agent de monitoring, une API FastAPI, un dashboard dynamique, des tests automatisés, Docker et un déploiement cloud.
 

@@ -8,6 +8,7 @@ from typing import Any
 
 from src.prompts import ROUTER_PROMPT
 from src.utils.llm import generate_with_gemini, get_llm_metadata
+from src.utils.ml_model import predict_machine_health
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,7 @@ class RouterAgent:
         issues: list[str] = []
         prompt = self.build_prompt(telemetry)
         llm_analysis = generate_with_gemini(prompt)
+        ml_prediction = predict_machine_health(telemetry)
 
         temperature = float(telemetry.get("temperature_c", 0))
         vibration = float(telemetry.get("vibration_mm_s", 0))
@@ -65,10 +67,16 @@ class RouterAgent:
         route = "critical" if issues else "normal"
         severity = "high" if len(issues) >= 2 else "medium" if issues else "low"
 
+        if route == "normal" and ml_prediction.get("label") == "critical":
+            route = "critical"
+            severity = "medium"
+            issues.append("Prédiction ML critique")
+
         return {
             "route": route,
             "severity": severity,
             "issues": issues,
+            "ml_prediction": ml_prediction,
             "machine_id": telemetry.get("machine_id", "unknown"),
             "prompt": prompt,
             "llm": {
