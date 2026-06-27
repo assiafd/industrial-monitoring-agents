@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from src.prompts import EMERGENCY_PROMPT
+from src.utils.llm import generate_with_gemini, get_llm_metadata
 from src.utils.slack import send_critical_incident_report
 
 
@@ -26,6 +27,8 @@ class EmergencyAgent:
     ) -> dict[str, Any]:
         machine_id = decision["machine_id"]
         issues = decision["issues"]
+        prompt = self.build_prompt(telemetry, decision)
+        llm_analysis = generate_with_gemini(prompt)
         diagnostic = " ; ".join(issues) if issues else "Anomalie critique non qualifiée."
         actions = [
             "Notifier immédiatement l'équipe de maintenance",
@@ -42,7 +45,11 @@ class EmergencyAgent:
         return {
             "status": "critical",
             "machine_id": machine_id,
-            "agent_prompt": self.build_prompt(telemetry, decision),
+            "agent_prompt": prompt,
+            "llm": {
+                **get_llm_metadata(),
+                "response": llm_analysis,
+            },
             "message": "Incident critique détecté.",
             "diagnostic": diagnostic,
             "actions": actions,

@@ -91,6 +91,7 @@ Dashboard dynamique
 | Docker | Conteneurisation |
 | Render | Déploiement cloud |
 | Slack API | Notification des incidents critiques |
+| Google Gemini 2.5 Flash | LLM utilisé par les agents pour enrichir le raisonnement et les diagnostics |
 
 ## 5. Structure du projet
 
@@ -588,7 +589,22 @@ Si `SLACK_BOT_TOKEN` n’est pas configuré, l’envoi Slack est ignoré proprem
 
 Cela permet aux tests automatisés et à GitHub Actions de fonctionner sans secret.
 
-## 20. Gouvernance des agents
+## 20. LLM Google Gemini 2.5 Flash
+
+Les agents utilisent leurs prompts avec Google Gemini 2.5 Flash lorsque la clé API est configurée. Le système reste robuste : si `GOOGLE_API_KEY` n’est pas définie, les agents continuent à fonctionner avec la logique déterministe de seuils et la réponse contient un statut `skipped` pour la partie LLM.
+
+Le `MonitoringAgent` utilise aussi Gemini pour produire un résumé lisible de l’exécution dans `monitoring_summary`. Les logs techniques, les événements, les horodatages et le Correlation ID restent déterministes.
+
+Variables à configurer en local ou dans Render :
+
+```env
+GOOGLE_API_KEY=your_google_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Les réponses des agents contiennent un bloc `llm` indiquant le provider, le modèle, l’état d’activation et la réponse générée par Gemini.
+
+## 21. Gouvernance des agents
 
 La gouvernance est documentée dans :
 
@@ -606,21 +622,21 @@ Ce fichier décrit :
 - les règles de traçabilité ;
 - les limites du système.
 
-## 21. Scénario de démonstration
+## 22. Scénario de démonstration
 
-### 21.1 Lancer l’application
+### 22.1 Lancer l’application
 
 ```bash
 uvicorn src.main:app --reload
 ```
 
-### 21.2 Ouvrir le dashboard
+### 22.2 Ouvrir le dashboard
 
 ```text
 http://localhost:8000
 ```
 
-### 21.3 Lancer le simulateur normal
+### 22.3 Lancer le simulateur normal
 
 ```bash
 python scripts/simulate_factory.py --loop
@@ -628,7 +644,7 @@ python scripts/simulate_factory.py --loop
 
 Le dashboard affiche un état normal.
 
-### 21.4 Lancer le simulateur critique
+### 22.4 Lancer le simulateur critique
 
 ```bash
 python scripts/simulate_factory.py --critical --loop
@@ -644,7 +660,7 @@ Le dashboard affiche :
 
 Si Slack est configuré, un rapport d’incident est envoyé automatiquement dans le canal défini par `SLACK_CHANNEL_NAME`.
 
-### 21.5 Exporter un rapport
+### 22.5 Exporter un rapport
 
 Cliquer sur :
 
@@ -654,7 +670,7 @@ Exporter rapport
 
 Le rapport généré contient les informations nécessaires au suivi de l’incident.
 
-## 22. Critères de validation couverts
+## 23. Critères de validation couverts
 
 | Critère | Statut |
 | --- | --- |
@@ -672,8 +688,9 @@ Le rapport généré contient les informations nécessaires au suivi de l’inci
 | Dashboard dynamique | Couvert |
 | Documentation technique | Couvert |
 | Notification Slack en cas critique | Couvert |
+| LLM Gemini 2.5 Flash dans les agents | Couvert |
 
-## 23. Conclusion
+## 24. Conclusion
 
 Ce projet fournit une solution complète de surveillance industrielle intelligente. Il combine une architecture multi-agents, un workflow LangGraph, un agent de monitoring, une API FastAPI, un dashboard dynamique, des tests automatisés, Docker et un déploiement cloud.
 

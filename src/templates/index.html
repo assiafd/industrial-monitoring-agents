@@ -165,6 +165,56 @@
               En attente d'une télémétrie machine.
             </p>
           </div>
+          <div class="mt-5 rounded-lg border border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-slate-50 p-4 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold uppercase tracking-[0.14em] text-cyan-700">
+                  M&eacute;triques LLM
+                </p>
+                <p class="mt-1 text-xs text-slate-500">
+                  Latence, tokens et co&ucirc;t estim&eacute; des appels Gemini.
+                </p>
+                <p id="llmStatus" class="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                  En attente d'analyse.
+                </p>
+              </div>
+              <span
+                id="llmModel"
+                class="rounded-full border border-cyan-200 bg-white px-3 py-1 font-mono text-xs font-semibold text-cyan-700"
+              >
+                -
+              </span>
+            </div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-3">
+              <div class="rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Latence</p>
+                <p
+                  id="llmLatency"
+                  class="mt-2 font-mono text-lg font-bold text-cyan-700"
+                >
+                  -
+                </p>
+              </div>
+              <div class="rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Tokens</p>
+                <p
+                  id="llmTokens"
+                  class="mt-2 font-mono text-lg font-bold text-indigo-700"
+                >
+                  -
+                </p>
+              </div>
+              <div class="rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Co&ucirc;t estim&eacute;</p>
+                <p
+                  id="llmCost"
+                  class="mt-2 font-mono text-lg font-bold text-emerald-700"
+                >
+                  -
+                </p>
+              </div>
+            </div>
+          </div>
         </aside>
 
         <section class="grid gap-4 md:grid-cols-2">
@@ -295,6 +345,83 @@
         return Math.min(100, Math.max(...normalizeTelemetry(payload)));
       }
 
+      function collectLlmResponses(data) {
+        const responses = [];
+        if (data.result?.llm?.response) {
+          responses.push(data.result.llm.response);
+        }
+        if (data.monitoring_summary?.llm?.response) {
+          responses.push(data.monitoring_summary.llm.response);
+        }
+        data.events.forEach((event) => {
+          const response = event.details?.llm?.response;
+          if (response) {
+            responses.push(response);
+          }
+        });
+        return responses;
+      }
+
+      function aggregateLlmMetrics(data) {
+        const responses = collectLlmResponses(data);
+        return responses.reduce(
+          (acc, response) => {
+            acc.latency_seconds += Number(response.latency_seconds || 0);
+            acc.total_tokens += Number(response.total_tokens || 0);
+            acc.estimated_cost += Number(response.estimated_cost || 0);
+            if (response.status === "generated") {
+              acc.generated += 1;
+            }
+            if (response.status === "skipped") {
+              acc.skipped += 1;
+            }
+            if (response.status === "failed") {
+              acc.failed += 1;
+            }
+            return acc;
+          },
+          {
+            latency_seconds: 0,
+            total_tokens: 0,
+            estimated_cost: 0,
+            generated: 0,
+            skipped: 0,
+            failed: 0,
+            calls: responses.length,
+          },
+        );
+      }
+
+      function renderLlmMetrics(data) {
+        const metrics = aggregateLlmMetrics(data);
+        const model =
+          data.monitoring_summary?.llm?.model || data.result?.llm?.model || "-";
+        document.querySelector("#llmModel").textContent = model;
+        document.querySelector("#llmLatency").textContent =
+          `${metrics.latency_seconds.toFixed(3)} s`;
+        document.querySelector("#llmTokens").textContent =
+          metrics.total_tokens.toLocaleString();
+        document.querySelector("#llmCost").textContent =
+          `$${metrics.estimated_cost.toFixed(6)}`;
+
+        const statusLabel =
+          metrics.generated > 0
+            ? `${metrics.generated}/${metrics.calls} appel(s) g\u00e9n\u00e9r\u00e9(s)`
+            : metrics.failed > 0
+              ? `${metrics.failed}/${metrics.calls} appel(s) en \u00e9chec`
+              : metrics.skipped > 0
+                ? "LLM non configur\u00e9"
+                : "Aucune m\u00e9trique LLM";
+        const status = document.querySelector("#llmStatus");
+        status.textContent = statusLabel;
+        status.className =
+          metrics.generated > 0
+            ? "mt-3 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700"
+            : metrics.failed > 0
+              ? "mt-3 inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700"
+              : "mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600";
+      }
+
       function setBadge(status) {
         const badge = document.querySelector("#routeBadge");
         if (status === "critical") {
@@ -387,6 +514,7 @@
 
         renderTimeline(data.events);
         renderActions(data.result.actions);
+        renderLlmMetrics(data);
         lastCorrelationId = data.correlation_id;
       }
 
@@ -441,6 +569,7 @@
 
         const telemetry = lastPacket.telemetry;
         const analysis = lastPacket.analysis;
+        const llmMetrics = aggregateLlmMetrics(analysis);
         const lines = [
           "Rapport de surveillance industrielle",
           "====================================",
@@ -450,6 +579,9 @@
           `Correlation ID: ${analysis.correlation_id}`,
           `Dernière donnée reçue: ${new Date(lastPacket.received_at).toLocaleString()}`,
           `Durée workflow: ${analysis.duration_ms} ms`,
+          `Latence LLM: ${llmMetrics.latency_seconds.toFixed(3)} s`,
+          `Tokens LLM: ${llmMetrics.total_tokens}`,
+          `Coût LLM estimé: $${llmMetrics.estimated_cost.toFixed(6)}`,
           "",
           "Télémétrie",
           "----------",

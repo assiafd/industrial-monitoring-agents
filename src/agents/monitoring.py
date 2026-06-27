@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import json
 from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
-from src.prompts import MONITORING_PROMPT
+from src.prompts import MONITORING_PROMPT, MONITORING_SUMMARY_PROMPT
+from src.utils.llm import generate_with_gemini, get_llm_metadata
 from src.utils.logger import configure_logger
 
 
@@ -46,11 +48,68 @@ class MonitoringAgent:
             },
         )
 
+    def build_readable_summary_prompt(
+        self,
+        *,
+        final_status: str,
+        result: dict[str, Any],
+        duration_ms: float,
+        ended_at: datetime,
+    ) -> str:
+        execution_context = {
+            "correlation_id": self.correlation_id,
+            "started_at": self.started_at.isoformat(),
+            "ended_at": ended_at.isoformat(),
+            "duration_ms": duration_ms,
+            "workflow_status": final_status,
+            "events": self.events,
+            "result": result,
+        }
+        return MONITORING_SUMMARY_PROMPT.format(
+            execution_context=json.dumps(execution_context, ensure_ascii=False, indent=2, default=str)
+        )
+
+    def build_readable_summary(
+        self,
+        *,
+        final_status: str,
+        result: dict[str, Any],
+        duration_ms: float,
+        ended_at: datetime,
+    ) -> dict[str, Any]:
+        """Generate an operator-friendly summary while preserving deterministic logs."""
+
+        prompt = self.build_readable_summary_prompt(
+            final_status=final_status,
+            result=result,
+            duration_ms=duration_ms,
+            ended_at=ended_at,
+        )
+        llm_response = generate_with_gemini(prompt)
+        fallback_text = (
+            f"Exécution {self.correlation_id} terminée avec le statut {final_status} "
+            f"en {duration_ms} ms. Résultat principal: {result.get('status', 'unknown')}."
+        )
+        return {
+            "agent_prompt": prompt,
+            "llm": {
+                **get_llm_metadata(),
+                "response": llm_response,
+            },
+            "text": llm_response.get("text") or fallback_text,
+        }
+
     def summary(self, final_status: str, result: dict[str, Any]) -> dict[str, Any]:
         """Return a compact execution summary for API responses."""
 
         ended_at = datetime.now(UTC)
         duration_ms = round((perf_counter() - self._start_timer) * 1000, 2)
+        readable_summary = self.build_readable_summary(
+            final_status=final_status,
+            result=result,
+            duration_ms=duration_ms,
+            ended_at=ended_at,
+        )
         return {
             "correlation_id": self.correlation_id,
             "started_at": self.started_at.isoformat(),
@@ -58,5 +117,6 @@ class MonitoringAgent:
             "duration_ms": duration_ms,
             "workflow_status": final_status,
             "events": self.events,
+            "monitoring_summary": readable_summary,
             "result": result,
         }

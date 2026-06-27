@@ -7,6 +7,7 @@ import json
 from typing import Any
 
 from src.prompts import ROUTER_PROMPT
+from src.utils.llm import generate_with_gemini, get_llm_metadata
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,8 @@ class RouterAgent:
 
     def evaluate(self, telemetry: dict[str, Any]) -> dict[str, Any]:
         issues: list[str] = []
+        prompt = self.build_prompt(telemetry)
+        llm_analysis = generate_with_gemini(prompt)
 
         temperature = float(telemetry.get("temperature_c", 0))
         vibration = float(telemetry.get("vibration_mm_s", 0))
@@ -67,7 +70,11 @@ class RouterAgent:
             "severity": severity,
             "issues": issues,
             "machine_id": telemetry.get("machine_id", "unknown"),
-            "prompt": self.build_prompt(telemetry),
+            "prompt": prompt,
+            "llm": {
+                **get_llm_metadata(),
+                "response": llm_analysis,
+            },
             "reasoning": (
                 "Route critique sélectionnée car au moins une anomalie dépasse les seuils."
                 if issues

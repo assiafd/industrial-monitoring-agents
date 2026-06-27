@@ -17,6 +17,19 @@ Surveiller une machine industrielle à partir de mesures JSON, détecter les sit
 | EmergencyAgent | Specialist | `EMERGENCY_PROMPT` | Produit le diagnostic critique et les actions d'urgence. |
 | MonitoringAgent | Supervisor | `MONITORING_PROMPT` | Génère le Correlation ID, journalise les étapes et résume l'exécution. |
 
+## Modèle LLM
+
+Les agents `RouterAgent`, `MaintenanceAgent`, `EmergencyAgent` et `MonitoringAgent` utilisent Google Gemini 2.5 Flash lorsque la variable `GOOGLE_API_KEY` est configurée.
+
+Configuration :
+
+```text
+GOOGLE_API_KEY=your_google_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Si la clé API n'est pas configurée, le workflow continue avec la logique déterministe de seuils et le bloc `llm.response.status` indique `skipped`. Pour `MonitoringAgent`, les logs techniques restent déterministes ; Gemini sert uniquement à générer un résumé lisible dans `monitoring_summary`.
+
 ## État LangGraph
 
 Le state est défini dans `src/state.py` :
@@ -46,8 +59,8 @@ receive_telemetry
 - Les prompts sont versionnés dans le code source.
 - Les seuils de routage sont centralisés dans `Thresholds`.
 - Les logs sont structurés en JSON.
-- Les tests automatisés valident les routes, l'API, les prompts et l'observabilité.
+- Les tests automatisés valident les routes, l'API, les prompts, le fallback LLM et l'observabilité.
 
 ## Risques et limites
 
-Cette version utilise des prompts déterministes et des règles de seuils. Elle peut être connectée plus tard à un LLM ou à un modèle ML, tout en conservant le même graphe LangGraph et le même state.
+La décision critique reste sécurisée par des règles de seuils. Gemini enrichit le raisonnement et les diagnostics lorsque la clé API est disponible, sans bloquer le workflow si le service LLM est indisponible.

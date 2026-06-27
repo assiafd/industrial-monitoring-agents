@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from src.prompts import MAINTENANCE_PROMPT
+from src.utils.llm import generate_with_gemini, get_llm_metadata
 
 
 class MaintenanceAgent:
@@ -19,10 +20,16 @@ class MaintenanceAgent:
 
     def handle(self, telemetry: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
         machine_id = decision["machine_id"]
+        prompt = self.build_prompt(telemetry, decision)
+        llm_analysis = generate_with_gemini(prompt)
         return {
             "status": "normal",
             "machine_id": machine_id,
-            "agent_prompt": self.build_prompt(telemetry, decision),
+            "agent_prompt": prompt,
+            "llm": {
+                **get_llm_metadata(),
+                "response": llm_analysis,
+            },
             "message": "La machine fonctionne correctement.",
             "diagnostic": "Aucun indicateur critique détecté sur la télémétrie reçue.",
             "actions": [

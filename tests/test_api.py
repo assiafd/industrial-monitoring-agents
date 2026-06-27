@@ -33,6 +33,12 @@ def test_analyze_endpoint_returns_correlation_id_for_normal_route():
     assert body["result"]["status"] == "normal"
     assert "agent_prompt" in body["result"]
     assert "correlation_id" in body["events"][0]
+    assert body["monitoring_summary"]["text"]
+    assert body["monitoring_summary"]["llm"]["provider"] == "google_gemini"
+    monitoring_llm_response = body["monitoring_summary"]["llm"]["response"]
+    assert "latency_seconds" in monitoring_llm_response
+    assert "estimated_cost" in monitoring_llm_response
+    assert "total_tokens" in monitoring_llm_response
 
 
 def test_analyze_endpoint_routes_critical_incident():
