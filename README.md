@@ -2,9 +2,9 @@
 
 ## Version
 
-Version actuelle : `1.1.0`
+Version actuelle : `1.2.0`
 
-Cette version ajoute l’envoi automatique d’un rapport d’incident vers Slack lorsqu’une machine passe au statut critique.
+Cette version ajoute l’entraînement du modèle scikit-learn, la prédiction ML de l’état machine et l’affichage de cette prédiction dans le dashboard.
 
 ## 1. Présentation
 

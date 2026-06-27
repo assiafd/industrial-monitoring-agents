@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app = FastAPI(
     title="Industrial Monitoring Agents",
     description="Système intelligent de surveillance et de maintenance industrielle.",
-    version="1.1.0",
+    version="1.2.0",
 )
 
 
