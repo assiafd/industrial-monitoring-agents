@@ -39,6 +39,8 @@ def test_analyze_endpoint_returns_correlation_id_for_normal_route():
     assert "latency_seconds" in monitoring_llm_response
     assert "estimated_cost" in monitoring_llm_response
     assert "total_tokens" in monitoring_llm_response
+    assert monitoring_llm_response["total_tokens"] > 0
+    assert monitoring_llm_response["estimated_cost"] > 0
 
 
 def test_analyze_endpoint_routes_critical_incident():

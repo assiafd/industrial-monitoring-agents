@@ -34,9 +34,19 @@ def _extract_usage_metadata(response: Any) -> dict[str, int]:
     if usage is None:
         return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
-    prompt_tokens = int(getattr(usage, "prompt_token_count", 0) or 0)
-    completion_tokens = int(getattr(usage, "candidates_token_count", 0) or 0)
-    total_tokens = int(getattr(usage, "total_token_count", 0) or 0)
+    def get_usage_value(*names: str) -> int:
+        for name in names:
+            if isinstance(usage, dict):
+                value = usage.get(name)
+            else:
+                value = getattr(usage, name, None)
+            if value is not None:
+                return int(value or 0)
+        return 0
+
+    prompt_tokens = get_usage_value("prompt_token_count", "prompt_tokens")
+    completion_tokens = get_usage_value("candidates_token_count", "completion_tokens")
+    total_tokens = get_usage_value("total_token_count", "total_tokens")
 
     if total_tokens == 0:
         total_tokens = prompt_tokens + completion_tokens
@@ -96,25 +106,37 @@ def generate_with_gemini(prompt: str) -> dict[str, Any]:
     model_name = os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip() or DEFAULT_GEMINI_MODEL
 
     if not api_key:
+        usage = _estimate_tokens_from_text(prompt)
         return {
             "status": "skipped",
             "reason": "GOOGLE_API_KEY is not configured",
             "provider": "google_gemini",
             "model": model_name,
             "text": None,
-            **_metrics(started_at=started_at),
+            **_metrics(
+                started_at=started_at,
+                prompt_tokens=usage["prompt_tokens"],
+                completion_tokens=usage["completion_tokens"],
+                total_tokens=usage["total_tokens"],
+            ),
         }
 
     try:
         import google.generativeai as genai
     except ImportError:
+        usage = _estimate_tokens_from_text(prompt)
         return {
             "status": "skipped",
             "reason": "google-generativeai package is not installed",
             "provider": "google_gemini",
             "model": model_name,
             "text": None,
-            **_metrics(started_at=started_at),
+            **_metrics(
+                started_at=started_at,
+                prompt_tokens=usage["prompt_tokens"],
+                completion_tokens=usage["completion_tokens"],
+                total_tokens=usage["total_tokens"],
+            ),
         }
 
     try:
@@ -144,11 +166,17 @@ def generate_with_gemini(prompt: str) -> dict[str, Any]:
             ),
         }
     except Exception as exc:
+        usage = _estimate_tokens_from_text(prompt)
         return {
             "status": "failed",
             "provider": "google_gemini",
             "model": model_name,
             "error": str(exc),
             "text": None,
-            **_metrics(started_at=started_at),
+            **_metrics(
+                started_at=started_at,
+                prompt_tokens=usage["prompt_tokens"],
+                completion_tokens=usage["completion_tokens"],
+                total_tokens=usage["total_tokens"],
+            ),
         }
